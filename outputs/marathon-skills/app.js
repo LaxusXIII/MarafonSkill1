@@ -120,7 +120,7 @@ async function signOut() {
 }
 
 function getRedirectUrl() {
-  return window.location.href.split("#")[0].split("?")[0];
+  return `${window.location.origin}/`;
 }
 
 function updateAuthUi() {
@@ -147,7 +147,7 @@ function updateAuthUi() {
 }
 
 async function loadRunners() {
-  if (!supabaseClient || !currentUser) return [];
+  if (!supabaseClient) return [];
 
   const { data, error } = await supabaseClient
     .from("runners")
@@ -179,6 +179,7 @@ async function saveRunner(runner) {
     email: runner.email,
     bmi: Number(runner.bmi),
     bmi_category: runner.bmiCategory,
+    source: "site",
   });
 
   if (error) {
@@ -208,7 +209,7 @@ async function renderParticipants() {
   tableBody.innerHTML = "";
   emptyState.textContent = currentUser
     ? "Пока нет зарегистрированных бегунов."
-    : "Войдите через Google, чтобы увидеть участников из Supabase.";
+    : "Пока нет зарегистрированных бегунов.";
 
   const runners = await loadRunners();
   emptyState.classList.toggle("is-visible", runners.length === 0);
