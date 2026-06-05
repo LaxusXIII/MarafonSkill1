@@ -13,3 +13,5 @@ for (const file of files) {
 }
 
 fs.cpSync(path.join(root, "assets"), path.join(out, "assets"), { recursive: true });
+fs.cpSync(path.join(root, "auth"), path.join(out, "auth"), { recursive: true });
+fs.cpSync(path.join(root, "callback"), path.join(out, "callback"), { recursive: true });

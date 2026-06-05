@@ -120,7 +120,7 @@ async function signOut() {
 }
 
 function getRedirectUrl() {
-  return `${window.location.origin}/`;
+  return `${window.location.origin}/auth/callback`;
 }
 
 function updateAuthUi() {
