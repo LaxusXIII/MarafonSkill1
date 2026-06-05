@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Marathon Skills</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <aside class="sidebar" aria-label="Основная навигация">
+      <div class="sidebar__brand">
+        <span class="sidebar__mark">MS</span>
+        <strong>Marathon Skills</strong>
+      </div>
+      <nav class="side-nav">
+        <button class="side-nav__item is-active" type="button" data-go="home">Главная</button>
+        <button class="side-nav__item" type="button" data-go="participants">Участники</button>
+        <button class="side-nav__item" type="button" data-go="bmi">BMI</button>
+        <button class="side-nav__item" type="button" data-go="register">Регистрация</button>
+      </nav>
+      <div class="auth-card">
+        <p class="auth-card__status" id="auth-status">Supabase не настроен</p>
+        <button class="auth-card__button" type="button" id="google-login">Войти через Google</button>
+        <button class="auth-card__button auth-card__button--ghost" type="button" id="logout" hidden>Выйти</button>
+      </div>
+    </aside>
+    <main class="app-shell">
+      <section class="page page-home is-active" data-page="home" aria-labelledby="home-title">
+        <div class="hero">
+          <img class="hero__image" src="assets/marathon-hero.png" alt="Участники городского марафона на трассе">
+          <div class="hero__shade"></div>
+          <div class="hero__content">
+            <p class="eyebrow">15 июня, каждый год</p>
+            <h1 id="home-title">Marathon Skills</h1>
+            <p class="hero__lead">Международный марафон для бегунов любого уровня. Зарегистрируйтесь, рассчитайте BMI и следите за списком участников.</p>
+            <div class="actions">
+              <button class="button button-primary" type="button" data-go="register">Регистрация</button>
+              <button class="button button-secondary" type="button" data-go="participants">Список участников</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="info-band" aria-label="Информация о марафоне">
+          <div>
+            <span class="stat">42.2 км</span>
+            <span>классическая дистанция</span>
+          </div>
+          <div>
+            <span class="stat">21.1 км</span>
+            <span>полумарафон</span>
+          </div>
+          <div>
+            <span class="stat">10 км</span>
+            <span>городской забег</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="page" data-page="register" aria-labelledby="register-title">
+        <header class="page-header">
+          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <div>
+            <p class="eyebrow">Шаг 1</p>
+            <h2 id="register-title">Регистрация бегуна</h2>
+          </div>
+        </header>
+
+        <form class="panel form-grid" id="runner-form">
+          <label>
+            Имя
+            <input name="firstName" autocomplete="given-name" required>
+          </label>
+          <label>
+            Фамилия
+            <input name="lastName" autocomplete="family-name" required>
+          </label>
+          <label>
+            Возраст
+            <input name="age" type="number" min="12" max="100" required>
+          </label>
+          <label>
+            Пол
+            <select name="gender" required>
+              <option value="">Выберите</option>
+              <option>Женский</option>
+              <option>Мужской</option>
+              <option>Не указан</option>
+            </select>
+          </label>
+          <label>
+            Страна
+            <input name="country" autocomplete="country-name" required>
+          </label>
+          <label>
+            Дистанция
+            <select name="distance" required>
+              <option value="">Выберите</option>
+              <option>42.2 км</option>
+              <option>21.1 км</option>
+              <option>10 км</option>
+            </select>
+          </label>
+          <label class="full">
+            Электронная почта
+            <input name="email" type="email" autocomplete="email" required>
+          </label>
+          <div class="form-actions full">
+            <button class="button button-secondary" type="button" data-go="home">Отмена</button>
+            <button class="button button-primary" type="submit">Далее: BMI</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="page" data-page="bmi" aria-labelledby="bmi-title">
+        <header class="page-header">
+          <button class="icon-button" type="button" data-go="register" aria-label="Назад к регистрации">‹</button>
+          <div>
+            <p class="eyebrow">Шаг 2</p>
+            <h2 id="bmi-title">Расчёт BMI</h2>
+          </div>
+        </header>
+
+        <form class="panel bmi-layout" id="bmi-form">
+          <div class="form-grid">
+            <label>
+              Рост, см
+              <input name="height" type="number" min="80" max="230" required>
+            </label>
+            <label>
+              Вес, кг
+              <input name="weight" type="number" min="25" max="250" step="0.1" required>
+            </label>
+          </div>
+          <div class="bmi-result" aria-live="polite">
+            <span>BMI</span>
+            <strong id="bmi-value">0.0</strong>
+            <p id="bmi-category">Введите рост и вес</p>
+          </div>
+          <div class="form-actions">
+            <button class="button button-secondary" type="button" data-go="register">Назад</button>
+            <button class="button button-primary" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="page" data-page="participants" aria-labelledby="participants-title">
+        <header class="page-header">
+          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <div>
+            <p class="eyebrow">Страница 4</p>
+            <h2 id="participants-title">Список участников</h2>
+          </div>
+        </header>
+
+        <div class="panel table-panel">
+          <div class="table-tools">
+            <strong id="runner-count">0 участников</strong>
+            <button class="button button-secondary button-small" type="button" id="clear-list">Очистить список</button>
+          </div>
+          <div class="empty-state" id="empty-state">Пока нет зарегистрированных бегунов.</div>
+          <div class="table-wrap">
+            <table id="participants-table">
+              <thead>
+                <tr>
+                  <th>Участник</th>
+                  <th>Страна</th>
+                  <th>Дистанция</th>
+                  <th>BMI</th>
+                  <th>Категория</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="countdown" aria-live="polite">
+      <span>До марафона</span>
+      <strong id="countdown">-- д --:--:--</strong>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

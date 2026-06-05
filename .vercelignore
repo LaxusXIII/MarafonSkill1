@@ -1,0 +1,6 @@
+outputs
+work
+*.bat
+*.log
+*.sql
+README.md
