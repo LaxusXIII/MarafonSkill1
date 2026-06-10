@@ -1,19 +1,24 @@
+const TELEGRAM_URL = "https://t.me/MarafonSkills_bot";
+
 const pages = document.querySelectorAll(".page");
+const navItems = document.querySelectorAll(".nav__item");
+const adminNav = document.querySelector("#admin-nav");
+const authStatus = document.querySelector("#auth-status");
+const googleLoginButton = document.querySelector("#google-login");
+const logoutButton = document.querySelector("#logout");
+const countdown = document.querySelector("#countdown");
+
 const runnerForm = document.querySelector("#runner-form");
 const bmiForm = document.querySelector("#bmi-form");
 const bmiValue = document.querySelector("#bmi-value");
 const bmiCategory = document.querySelector("#bmi-category");
-const tableBody = document.querySelector("#participants-table tbody");
-const emptyState = document.querySelector("#empty-state");
+
+const participantsBody = document.querySelector("#participants-body");
+const participantsEmpty = document.querySelector("#participants-empty");
 const runnerCount = document.querySelector("#runner-count");
-const clearButton = document.querySelector("#clear-list");
-const countdown = document.querySelector("#countdown");
-const navItems = document.querySelectorAll(".side-nav__item");
-const authStatus = document.querySelector("#auth-status");
-const googleLoginButton = document.querySelector("#google-login");
-const logoutButton = document.querySelector("#logout");
-const adminNav = document.querySelector("#admin-nav");
-const adminTableBody = document.querySelector("#admin-table tbody");
+const refreshParticipants = document.querySelector("#refresh-participants");
+
+const adminBody = document.querySelector("#admin-body");
 const adminEmpty = document.querySelector("#admin-empty");
 const adminCount = document.querySelector("#admin-count");
 const adminRefresh = document.querySelector("#admin-refresh");
@@ -24,21 +29,22 @@ const config = {
   url: normalizeConfigValue(rawConfig.url),
   anonKey: normalizeConfigValue(rawConfig.anonKey),
 };
-const isSupabaseConfigured =
+
+const supabaseConfigured =
   Boolean(config.url && config.anonKey) &&
   !config.url.includes("PASTE_") &&
   !config.anonKey.includes("PASTE_");
 
-const supabaseLibraryLoaded = Boolean(window.supabase);
 const supabaseClient =
-  isSupabaseConfigured && supabaseLibraryLoaded
+  supabaseConfigured && window.supabase
     ? window.supabase.createClient(config.url, config.anonKey)
     : null;
 
-let draftRunner = null;
 let currentUser = null;
 let isAdmin = false;
-let adminRunners = [];
+let draftRunner = null;
+let adminRows = [];
+
 if (adminNav) adminNav.hidden = true;
 
 function normalizeConfigValue(value) {
@@ -53,127 +59,16 @@ function showPage(name) {
   }
 
   pages.forEach((page) => page.classList.toggle("is-active", page.dataset.page === name));
-  navItems.forEach((item) => item.classList.toggle("is-active", item.dataset.go === name));
+  navItems.forEach((item) => item.classList.toggle("is-active", item.dataset.pageTarget === name));
   window.scrollTo({ top: 0, behavior: "smooth" });
 
-  if (name === "participants") {
-    renderParticipants();
-  }
-
-  if (name === "admin") {
-    renderAdmin();
-  }
+  if (name === "participants") renderParticipants();
+  if (name === "admin") renderAdmin();
 }
-
-function getNextMarathonDate(now = new Date()) {
-  const year = now.getFullYear();
-  let target = new Date(year, 5, 15, 9, 0, 0);
-  if (target <= now) {
-    target = new Date(year + 1, 5, 15, 9, 0, 0);
-  }
-  return target;
-}
-
-function updateCountdown() {
-  const diff = getNextMarathonDate() - new Date();
-  const totalSeconds = Math.max(0, Math.floor(diff / 1000));
-  const days = Math.floor(totalSeconds / 86400);
-  const hours = Math.floor((totalSeconds % 86400) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  countdown.textContent = `${days} д ${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function calculateBmi() {
-  const height = Number(bmiForm.elements.height.value) / 100;
-  const weight = Number(bmiForm.elements.weight.value);
-
-  if (!height || !weight) {
-    bmiValue.textContent = "0.0";
-    bmiCategory.textContent = "Введите рост и вес";
-    return null;
-  }
-
-  const value = weight / (height * height);
-  let category = "Норма";
-  if (value < 18.5) category = "Недостаточный вес";
-  if (value >= 25) category = "Избыточный вес";
-  if (value >= 30) category = "Ожирение";
-
-  bmiValue.textContent = value.toFixed(1);
-  bmiCategory.textContent = category;
-  return { value: value.toFixed(1), category };
-}
-
-async function getSession() {
-  if (!supabaseClient) return null;
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
-    showNotice(`Ошибка авторизации: ${error.message}`);
-    return null;
-  }
-  return data.session;
-}
-
-async function signInWithGoogle() {
-  if (!supabaseClient) {
-    showNotice("Вставьте Supabase URL и anon key в supabase-config.js.");
-    return;
-  }
-
-  const { error } = await supabaseClient.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: getRedirectUrl(),
-    },
-  });
-
-  if (error) {
-    showNotice(`Не удалось открыть Google-вход: ${error.message}`);
-  }
-}
-
-async function signOut() {
-  if (!supabaseClient) return;
-  await supabaseClient.auth.signOut();
-}
-
-function getRedirectUrl() {
-  return `${window.location.origin}/auth/callback`;
-}
-
-function updateAuthUi() {
-  if (!supabaseClient) {
-    authStatus.textContent = isSupabaseConfigured
-      ? "Библиотека Supabase не загрузилась"
-      : "Supabase не настроен";
-    googleLoginButton.disabled = false;
-    googleLoginButton.hidden = false;
-    logoutButton.hidden = true;
-    setAdminVisible(false);
-    return;
-  }
-
-  if (currentUser) {
-    authStatus.textContent = currentUser.email || "Вы вошли через Google";
-    googleLoginButton.hidden = true;
-    logoutButton.hidden = false;
-  } else {
-    authStatus.textContent = "Войдите через Google";
-    googleLoginButton.hidden = false;
-    googleLoginButton.disabled = false;
-    logoutButton.hidden = true;
-    setAdminVisible(false);
-  }
-}
-
 
 function setAdminVisible(visible) {
   isAdmin = Boolean(visible);
-  if (adminNav) {
-    adminNav.hidden = !isAdmin;
-  }
-
+  if (adminNav) adminNav.hidden = !isAdmin;
   const adminPage = document.querySelector('[data-page="admin"]');
   if (!isAdmin && adminPage?.classList.contains("is-active")) {
     showPage("home");
@@ -200,40 +95,68 @@ async function refreshAdminAccess() {
   setAdminVisible(Boolean(data));
 }
 
+function updateAuthUi() {
+  if (!supabaseClient) {
+    authStatus.textContent = supabaseConfigured
+      ? "Supabase library is not loaded"
+      : "Supabase is not configured";
+    googleLoginButton.hidden = false;
+    logoutButton.hidden = true;
+    setAdminVisible(false);
+    return;
+  }
+
+  if (currentUser) {
+    authStatus.textContent = currentUser.email || "Google account signed in";
+    googleLoginButton.hidden = true;
+    logoutButton.hidden = false;
+  } else {
+    authStatus.textContent = "Войдите через Google";
+    googleLoginButton.hidden = false;
+    logoutButton.hidden = true;
+    setAdminVisible(false);
+  }
+}
+
+async function signInWithGoogle() {
+  if (!supabaseClient) {
+    showNotice("Supabase is not configured.");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+    },
+  });
+
+  if (error) showNotice(`Google sign-in failed: ${error.message}`);
+}
+
+async function signOut() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+}
+
 async function loadRunners() {
   if (!supabaseClient) return [];
-
   const { data, error } = await supabaseClient
     .from("runners")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
-    showNotice(`Не удалось загрузить участников: ${error.message}`);
+    showNotice(`Load failed: ${error.message}`);
     return [];
   }
 
   return data || [];
 }
 
-async function deleteRunner(id) {
+async function saveSiteRunner(runner) {
   if (!supabaseClient || !currentUser) {
-    showNotice("Для удаления записей войдите через Google.");
-    return false;
-  }
-
-  const { error } = await supabaseClient.from("runners").delete().eq("id", id);
-  if (error) {
-    showNotice(`Не удалось удалить запись: ${error.message}`);
-    return false;
-  }
-
-  return true;
-}
-
-async function saveRunner(runner) {
-  if (!supabaseClient || !currentUser) {
-    showNotice("Чтобы сохранить участника, войдите через Google.");
+    showNotice("Сначала войдите через Google.");
     return false;
   }
 
@@ -252,54 +175,53 @@ async function saveRunner(runner) {
   });
 
   if (error) {
-    showNotice(`Не удалось сохранить участника: ${error.message}`);
+    showNotice(`Save failed: ${error.message}`);
     return false;
   }
 
   return true;
 }
 
-async function clearOwnRunners() {
-  if (!supabaseClient || !currentUser) {
-    showNotice("Чтобы очистить свои записи, войдите через Google.");
-    return;
+async function deleteRunner(id) {
+  if (!supabaseClient || !isAdmin) {
+    showNotice("Admin access required.");
+    return false;
   }
 
-  const { error } = await supabaseClient.from("runners").delete().eq("user_id", currentUser.id);
+  const { error } = await supabaseClient.from("runners").delete().eq("id", id);
   if (error) {
-    showNotice(`Не удалось очистить список: ${error.message}`);
-    return;
+    showNotice(`Delete failed: ${error.message}`);
+    return false;
   }
 
-  renderParticipants();
+  return true;
 }
 
 async function renderParticipants() {
-  tableBody.innerHTML = "";
-  emptyState.textContent = currentUser
-    ? "Пока нет зарегистрированных бегунов."
-    : "Пока нет зарегистрированных бегунов.";
+  participantsBody.innerHTML = "";
+  participantsEmpty.textContent = "Загрузка...";
+  participantsEmpty.classList.add("is-visible");
 
   const runners = await loadRunners();
-  emptyState.classList.toggle("is-visible", runners.length === 0);
+  participantsEmpty.textContent = "Пока нет зарегистрированных бегунов.";
+  participantsEmpty.classList.toggle("is-visible", runners.length === 0);
   runnerCount.textContent = `${runners.length} ${decline(runners.length, "участник", "участника", "участников")}`;
 
   for (const runner of runners) {
     const row = document.createElement("tr");
+    const source = runner.source || "site";
     row.innerHTML = `
       <td><strong>${escapeHtml(runner.first_name)} ${escapeHtml(runner.last_name)}</strong><br><span>${escapeHtml(runner.email)}, ${escapeHtml(runner.age)} лет</span></td>
+      <td><span class="source-badge ${escapeHtml(source)}">${escapeHtml(source)}</span></td>
       <td>${escapeHtml(runner.country)}</td>
       <td>${escapeHtml(runner.distance)}</td>
-      <td>${escapeHtml(runner.bmi)}</td>
-      <td>${escapeHtml(runner.bmi_category)}</td>
+      <td>${escapeHtml(runner.bmi)}<br><span>${escapeHtml(runner.bmi_category)}</span></td>
     `;
-    tableBody.append(row);
+    participantsBody.append(row);
   }
 }
 
 async function renderAdmin() {
-  if (!adminTableBody) return;
-
   if (!isAdmin) {
     setAdminVisible(false);
     showNotice("Admin panel is available only for an admin Google account.");
@@ -307,22 +229,22 @@ async function renderAdmin() {
     return;
   }
 
-adminTableBody.innerHTML = "";
-  adminEmpty.textContent = "Загружаю записи...";
+  adminBody.innerHTML = "";
+  adminEmpty.textContent = "Загрузка...";
   adminEmpty.classList.add("is-visible");
-  adminRunners = await loadRunners();
+  adminRows = await loadRunners();
   drawAdminRows();
 }
 
 function drawAdminRows() {
   const source = adminSourceFilter.value;
   const rows = source === "all"
-    ? adminRunners
-    : adminRunners.filter((runner) => (runner.source || "site") === source);
+    ? adminRows
+    : adminRows.filter((runner) => (runner.source || "site") === source);
 
-  adminTableBody.innerHTML = "";
-  adminEmpty.classList.toggle("is-visible", rows.length === 0);
+  adminBody.innerHTML = "";
   adminEmpty.textContent = "Записей нет.";
+  adminEmpty.classList.toggle("is-visible", rows.length === 0);
   adminCount.textContent = `${rows.length} ${decline(rows.length, "запись", "записи", "записей")}`;
 
   for (const runner of rows) {
@@ -336,19 +258,41 @@ function drawAdminRows() {
       <td>${formatDate(runner.created_at)}</td>
       <td><button class="danger-button" type="button" data-delete-runner="${escapeHtml(runner.id)}">Удалить</button></td>
     `;
-    adminTableBody.append(row);
+    adminBody.append(row);
   }
 }
 
-function formatDate(value) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+function calculateBmi() {
+  const height = Number(bmiForm.elements.height.value) / 100;
+  const weight = Number(bmiForm.elements.weight.value);
+
+  if (!height || !weight) {
+    bmiValue.textContent = "0.0";
+    bmiCategory.textContent = "Введите рост и вес";
+    return null;
+  }
+
+  const value = weight / (height * height);
+  let category = "Норма";
+  if (value < 18.5) category = "Недостаточный вес";
+  if (value >= 25) category = "Избыточный вес";
+  if (value >= 30) category = "Ожирение";
+
+  bmiValue.textContent = value.toFixed(1);
+  bmiCategory.textContent = category;
+  return { value: value.toFixed(1), category };
+}
+
+function updateCountdown() {
+  const now = new Date();
+  let target = new Date(now.getFullYear(), 5, 15, 9, 0, 0);
+  if (target <= now) target = new Date(now.getFullYear() + 1, 5, 15, 9, 0, 0);
+  const seconds = Math.max(0, Math.floor((target - now) / 1000));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const sec = seconds % 60;
+  countdown.textContent = `${days} д ${pad(hours)}:${pad(minutes)}:${pad(sec)}`;
 }
 
 function showNotice(message) {
@@ -383,40 +327,43 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function formatDate(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("ru-RU");
+}
+
+function pad(value) {
+  return String(value).padStart(2, "0");
+}
+
 document.addEventListener("click", (event) => {
   const deleteButton = event.target.closest("[data-delete-runner]");
   if (deleteButton) {
-    const id = deleteButton.dataset.deleteRunner;
     if (confirm("Удалить эту запись?")) {
-      deleteRunner(id).then((deleted) => {
+      deleteRunner(deleteButton.dataset.deleteRunner).then((deleted) => {
         if (deleted) renderAdmin();
       });
     }
     return;
   }
 
-  const button = event.target.closest("[data-go]");
-  if (button) {
-    showPage(button.dataset.go);
-  }
+  const target = event.target.closest("[data-page-target]");
+  if (target) showPage(target.dataset.pageTarget);
 });
-
-if (adminRefresh) {
-  adminRefresh.addEventListener("click", renderAdmin);
-}
-
-if (adminSourceFilter) {
-  adminSourceFilter.addEventListener("change", drawAdminRows);
-}
 
 googleLoginButton.addEventListener("click", signInWithGoogle);
 logoutButton.addEventListener("click", signOut);
+refreshParticipants.addEventListener("click", renderParticipants);
+adminRefresh.addEventListener("click", renderAdmin);
+adminSourceFilter.addEventListener("change", drawAdminRows);
+bmiForm.addEventListener("input", calculateBmi);
 
 runnerForm.addEventListener("submit", (event) => {
   event.preventDefault();
-
   if (!currentUser) {
-    showNotice("Сначала войдите через Google, затем продолжите регистрацию.");
+    showNotice("Сначала войдите через Google.");
     return;
   }
 
@@ -424,21 +371,18 @@ runnerForm.addEventListener("submit", (event) => {
   showPage("bmi");
 });
 
-bmiForm.addEventListener("input", calculateBmi);
-
 bmiForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const bmi = calculateBmi();
   if (!draftRunner || !bmi) return;
 
-  const saved = await saveRunner({
+  const saved = await saveSiteRunner({
     ...draftRunner,
     bmi: bmi.value,
     bmiCategory: bmi.category,
   });
 
   if (!saved) return;
-
   draftRunner = null;
   runnerForm.reset();
   bmiForm.reset();
@@ -446,27 +390,26 @@ bmiForm.addEventListener("submit", async (event) => {
   showPage("participants");
 });
 
-clearButton.addEventListener("click", clearOwnRunners);
-
 async function boot() {
+  updateCountdown();
+  calculateBmi();
+  setInterval(updateCountdown, 1000);
+
   if (!supabaseClient) {
-    showNotice(
-      isSupabaseConfigured
-        ? "Не загрузилась библиотека Supabase. Проверьте доступ к CDN jsdelivr или подключите библиотеку локально."
-        : "Подключите Supabase в файле supabase-config.js, затем настройте Google provider в Supabase."
-    );
     updateAuthUi();
+    showNotice(supabaseConfigured ? "Supabase library is not loaded." : "Supabase is not configured.");
     renderParticipants();
     return;
   }
 
-  const session = await getSession();
-  currentUser = session?.user || null;
+  const { data } = await supabaseClient.auth.getSession();
+  currentUser = data.session?.user || null;
   updateAuthUi();
   await refreshAdminAccess();
+  renderParticipants();
 
-  supabaseClient.auth.onAuthStateChange(async (_event, sessionState) => {
-    currentUser = sessionState?.user || null;
+  supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    currentUser = session?.user || null;
     updateAuthUi();
     await refreshAdminAccess();
     renderParticipants();
@@ -474,11 +417,6 @@ async function boot() {
       renderAdmin();
     }
   });
-
-  renderParticipants();
 }
 
-updateCountdown();
-calculateBmi();
-setInterval(updateCountdown, 1000);
 boot();

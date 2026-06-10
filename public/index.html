@@ -7,195 +7,140 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
-    <aside class="sidebar" aria-label="Основная навигация">
-      <div class="sidebar__brand">
-        <span class="sidebar__mark">MS</span>
+    <aside class="sidebar">
+      <div class="brand">
+        <span>MS</span>
         <strong>Marathon Skills</strong>
       </div>
-      <p class="deploy-version">Admin update • 2026-06-10</p>
-      <nav class="side-nav">
-        <button class="side-nav__item is-active" type="button" data-go="home">Главная</button>
-        <button class="side-nav__item" type="button" data-go="participants">Участники</button>
-        <button class="side-nav__item" type="button" data-go="bmi">BMI</button>
-        <button class="side-nav__item" type="button" data-go="register">Регистрация</button>
-        <button class="side-nav__item" type="button" data-go="admin">Админ</button>
+      <p class="version">Clean build • 2026-06-10</p>
+
+      <nav class="nav">
+        <button class="nav__item is-active" type="button" data-page-target="home">Главная</button>
+        <button class="nav__item" type="button" data-page-target="register">Регистрация</button>
+        <button class="nav__item" type="button" data-page-target="bmi">BMI</button>
+        <button class="nav__item" type="button" data-page-target="participants">Участники</button>
+        <button class="nav__item" type="button" data-page-target="admin" id="admin-nav" hidden>Админ</button>
       </nav>
+
       <a class="telegram-link" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram-бот</a>
-      <div class="auth-card">
-        <p class="auth-card__status" id="auth-status">Supabase не настроен</p>
-        <button class="auth-card__button" type="button" id="google-login">Войти через Google</button>
-        <button class="auth-card__button auth-card__button--ghost" type="button" id="logout" hidden>Выйти</button>
+
+      <div class="auth">
+        <p id="auth-status">Проверка входа...</p>
+        <button class="auth__button" type="button" id="google-login">Войти через Google</button>
+        <button class="auth__button auth__button--dark" type="button" id="logout" hidden>Выйти</button>
       </div>
     </aside>
-    <main class="app-shell">
-      <section class="page page-home is-active" data-page="home" aria-labelledby="home-title">
+
+    <main class="app">
+      <section class="page page-home is-active" data-page="home">
         <div class="hero">
-          <img class="hero__image" src="assets/marathon-hero.png" alt="Участники городского марафона на трассе">
+          <img src="assets/marathon-hero.png" alt="Бегуны на марафоне">
           <div class="hero__shade"></div>
           <div class="hero__content">
-            <p class="eyebrow">15 июня, каждый год</p>
-            <h1 id="home-title">Marathon Skills</h1>
-            <p class="hero__lead">Международный марафон для бегунов любого уровня. Зарегистрируйтесь, рассчитайте BMI и следите за списком участников.</p>
+            <p class="eyebrow">15 июня каждый год</p>
+            <h1>Marathon Skills</h1>
+            <p>Марафонская регистрация, BMI-калькулятор и общий список участников, синхронизированный через Supabase.</p>
             <div class="actions">
-              <button class="button button-primary" type="button" data-go="register">Регистрация</button>
-              <button class="button button-secondary" type="button" data-go="participants">Список участников</button>
+              <button class="button button-primary" type="button" data-page-target="register">Регистрация</button>
+              <button class="button button-secondary" type="button" data-page-target="participants">Список участников</button>
               <a class="button button-telegram" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram-бот</a>
             </div>
           </div>
         </div>
-
-        <section class="info-band" aria-label="Информация о марафоне">
-          <div>
-            <span class="stat">42.2 км</span>
-            <span>классическая дистанция</span>
-          </div>
-          <div>
-            <span class="stat">21.1 км</span>
-            <span>полумарафон</span>
-          </div>
-          <div>
-            <span class="stat">10 км</span>
-            <span>городской забег</span>
-          </div>
+        <section class="stats">
+          <div><strong>42.2 км</strong><span>классическая дистанция</span></div>
+          <div><strong>21.1 км</strong><span>полумарафон</span></div>
+          <div><strong>10 км</strong><span>городской забег</span></div>
         </section>
       </section>
 
-      <section class="page" data-page="register" aria-labelledby="register-title">
+      <section class="page" data-page="register">
         <header class="page-header">
-          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <button class="back-button" type="button" data-page-target="home">‹</button>
           <div>
             <p class="eyebrow">Шаг 1</p>
-            <h2 id="register-title">Регистрация бегуна</h2>
+            <h2>Регистрация бегуна</h2>
           </div>
         </header>
-
         <form class="panel form-grid" id="runner-form">
-          <label>
-            Имя
-            <input name="firstName" autocomplete="given-name" required>
-          </label>
-          <label>
-            Фамилия
-            <input name="lastName" autocomplete="family-name" required>
-          </label>
-          <label>
-            Возраст
-            <input name="age" type="number" min="12" max="100" required>
-          </label>
-          <label>
-            Пол
-            <select name="gender" required>
-              <option value="">Выберите</option>
-              <option>Женский</option>
-              <option>Мужской</option>
-              <option>Не указан</option>
-            </select>
-          </label>
-          <label>
-            Страна
-            <input name="country" autocomplete="country-name" required>
-          </label>
-          <label>
-            Дистанция
-            <select name="distance" required>
-              <option value="">Выберите</option>
-              <option>42.2 км</option>
-              <option>21.1 км</option>
-              <option>10 км</option>
-            </select>
-          </label>
-          <label class="full">
-            Электронная почта
-            <input name="email" type="email" autocomplete="email" required>
-          </label>
+          <label>Имя<input name="firstName" required autocomplete="given-name"></label>
+          <label>Фамилия<input name="lastName" required autocomplete="family-name"></label>
+          <label>Возраст<input name="age" type="number" min="12" max="100" required></label>
+          <label>Пол<select name="gender" required><option>Женский</option><option>Мужской</option><option>Не указан</option></select></label>
+          <label>Страна<input name="country" required autocomplete="country-name"></label>
+          <label>Дистанция<select name="distance" required><option>42.2 км</option><option>21.1 км</option><option>10 км</option></select></label>
+          <label class="full">Email<input name="email" type="email" required autocomplete="email"></label>
           <div class="form-actions full">
-            <button class="button button-secondary" type="button" data-go="home">Отмена</button>
+            <button class="button button-secondary" type="button" data-page-target="home">Отмена</button>
             <button class="button button-primary" type="submit">Далее: BMI</button>
           </div>
         </form>
       </section>
 
-      <section class="page" data-page="bmi" aria-labelledby="bmi-title">
+      <section class="page" data-page="bmi">
         <header class="page-header">
-          <button class="icon-button" type="button" data-go="register" aria-label="Назад к регистрации">‹</button>
+          <button class="back-button" type="button" data-page-target="register">‹</button>
           <div>
             <p class="eyebrow">Шаг 2</p>
-            <h2 id="bmi-title">Расчёт BMI</h2>
+            <h2>Расчёт BMI</h2>
           </div>
         </header>
-
-        <form class="panel bmi-layout" id="bmi-form">
+        <form class="panel bmi-panel" id="bmi-form">
           <div class="form-grid">
-            <label>
-              Рост, см
-              <input name="height" type="number" min="80" max="230" required>
-            </label>
-            <label>
-              Вес, кг
-              <input name="weight" type="number" min="25" max="250" step="0.1" required>
-            </label>
+            <label>Рост, см<input name="height" type="number" min="80" max="230" required></label>
+            <label>Вес, кг<input name="weight" type="number" min="25" max="250" step="0.1" required></label>
           </div>
-          <div class="bmi-result" aria-live="polite">
+          <div class="bmi-result">
             <span>BMI</span>
             <strong id="bmi-value">0.0</strong>
             <p id="bmi-category">Введите рост и вес</p>
           </div>
           <div class="form-actions">
-            <button class="button button-secondary" type="button" data-go="register">Назад</button>
+            <button class="button button-secondary" type="button" data-page-target="register">Назад</button>
             <button class="button button-primary" type="submit">Сохранить</button>
           </div>
         </form>
       </section>
 
-      <section class="page" data-page="participants" aria-labelledby="participants-title">
+      <section class="page" data-page="participants">
         <header class="page-header">
-          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <button class="back-button" type="button" data-page-target="home">‹</button>
           <div>
-            <p class="eyebrow">Страница 4</p>
-            <h2 id="participants-title">Список участников</h2>
+            <p class="eyebrow">Общий список</p>
+            <h2>Участники</h2>
           </div>
         </header>
-
-        <div class="panel table-panel">
-          <div class="table-tools">
+        <div class="panel">
+          <div class="table-toolbar">
             <strong id="runner-count">0 участников</strong>
-            <button class="button button-secondary button-small" type="button" id="clear-list">Очистить список</button>
+            <button class="button button-secondary button-small" type="button" id="refresh-participants">Обновить</button>
           </div>
-          <div class="empty-state" id="empty-state">Пока нет зарегистрированных бегунов.</div>
+          <div class="empty" id="participants-empty">Загрузка...</div>
           <div class="table-wrap">
-            <table id="participants-table">
-              <thead>
-                <tr>
-                  <th>Участник</th>
-                  <th>Страна</th>
-                  <th>Дистанция</th>
-                  <th>BMI</th>
-                  <th>Категория</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
+            <table>
+              <thead><tr><th>Участник</th><th>Источник</th><th>Страна</th><th>Дистанция</th><th>BMI</th></tr></thead>
+              <tbody id="participants-body"></tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <section class="page" data-page="admin" aria-labelledby="admin-title">
+      <section class="page" data-page="admin">
         <header class="page-header">
-          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <button class="back-button" type="button" data-page-target="home">‹</button>
           <div>
             <p class="eyebrow">Панель управления</p>
-            <h2 id="admin-title">Админ-панель</h2>
+            <h2>Админ-панель</h2>
           </div>
         </header>
-
-        <div class="panel admin-panel">
-          <div class="admin-toolbar">
+        <div class="panel">
+          <div class="table-toolbar admin-toolbar">
             <div>
               <strong id="admin-count">0 записей</strong>
-              <p>Участники из сайта, Android и Telegram-бота.</p>
+              <p>Записи сайта, Android и Telegram-бота.</p>
             </div>
-            <div class="admin-actions">
-              <select id="admin-source-filter" aria-label="Фильтр источника">
+            <div class="toolbar-actions">
+              <select id="admin-source-filter">
                 <option value="all">Все источники</option>
                 <option value="site">Сайт</option>
                 <option value="android">Android</option>
@@ -205,27 +150,18 @@
               <a class="button button-telegram button-small" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram</a>
             </div>
           </div>
-          <div class="empty-state" id="admin-empty">Пока нет записей.</div>
+          <div class="empty" id="admin-empty">Загрузка...</div>
           <div class="table-wrap">
-            <table id="admin-table">
-              <thead>
-                <tr>
-                  <th>Участник</th>
-                  <th>Источник</th>
-                  <th>Дистанция</th>
-                  <th>BMI</th>
-                  <th>Дата</th>
-                  <th>Действие</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
+            <table>
+              <thead><tr><th>Участник</th><th>Источник</th><th>Дистанция</th><th>BMI</th><th>Дата</th><th></th></tr></thead>
+              <tbody id="admin-body"></tbody>
             </table>
           </div>
         </div>
       </section>
     </main>
 
-    <footer class="countdown" aria-live="polite">
+    <footer class="countdown">
       <span>До марафона</span>
       <strong id="countdown">-- д --:--:--</strong>
     </footer>

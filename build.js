@@ -3,15 +3,31 @@ const path = require("path");
 
 const root = __dirname;
 const out = path.join(root, "public");
-const files = ["index.html", "styles.css", "app.js", "supabase-config.js", "deploy-check.html"];
+const entries = [
+  "index.html",
+  "styles.css",
+  "app.js",
+  "supabase-config.js",
+  "vercel.json",
+  "deploy-check.html",
+  "assets",
+  "auth",
+  "callback",
+];
 
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
 
-for (const file of files) {
-  fs.copyFileSync(path.join(root, file), path.join(out, file));
+for (const entry of entries) {
+  const from = path.join(root, entry);
+  const to = path.join(out, entry);
+  if (!fs.existsSync(from)) continue;
+  const stat = fs.statSync(from);
+  if (stat.isDirectory()) {
+    fs.cpSync(from, to, { recursive: true });
+  } else {
+    fs.copyFileSync(from, to);
+  }
 }
 
-fs.cpSync(path.join(root, "assets"), path.join(out, "assets"), { recursive: true });
-fs.cpSync(path.join(root, "auth"), path.join(out, "auth"), { recursive: true });
-fs.cpSync(path.join(root, "callback"), path.join(out, "callback"), { recursive: true });
+console.log("MARAFON_CLEAN_BUILD: admin-telegram-sync");

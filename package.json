@@ -1,9 +1,9 @@
 {
-  "name": "marathon-skills",
+  "name": "marafon-skill-clean",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node build.js && node -e \"console.log('MARATHON_DEPLOY_VERSION: admin-update-2026-06-10')\""
+    "build": "node build.js"
   },
   "devDependencies": {}
 }
