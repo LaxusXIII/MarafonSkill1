@@ -76,10 +76,13 @@ function setAdminVisible(visible) {
 }
 
 async function refreshAdminAccess() {
-  if (!supabaseClient || !currentUser?.email) {
-    setAdminVisible(false);
-    return;
-  }
+    if (!supabaseClient || !currentUser?.email) {
+        setAdminVisible(false);
+        return;
+    }
+
+    setAdminVisible(true);
+}
 
   const { data, error } = await supabaseClient
     .from("admin_users")
