@@ -77,6 +77,12 @@ button, input, select { font: inherit; }
   text-align: left;
 }
 
+.nav__link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
 .nav__item:hover,
 .nav__item.is-active {
   color: #ffffff;
