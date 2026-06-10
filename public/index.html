@@ -12,12 +12,15 @@
         <span class="sidebar__mark">MS</span>
         <strong>Marathon Skills</strong>
       </div>
+      <p class="deploy-version">Admin update • 2026-06-10</p>
       <nav class="side-nav">
         <button class="side-nav__item is-active" type="button" data-go="home">Главная</button>
         <button class="side-nav__item" type="button" data-go="participants">Участники</button>
         <button class="side-nav__item" type="button" data-go="bmi">BMI</button>
         <button class="side-nav__item" type="button" data-go="register">Регистрация</button>
+        <button class="side-nav__item" type="button" data-go="admin">Админ</button>
       </nav>
+      <a class="telegram-link" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram-бот</a>
       <div class="auth-card">
         <p class="auth-card__status" id="auth-status">Supabase не настроен</p>
         <button class="auth-card__button" type="button" id="google-login">Войти через Google</button>
@@ -36,6 +39,7 @@
             <div class="actions">
               <button class="button button-primary" type="button" data-go="register">Регистрация</button>
               <button class="button button-secondary" type="button" data-go="participants">Список участников</button>
+              <a class="button button-telegram" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram-бот</a>
             </div>
           </div>
         </div>
@@ -167,6 +171,51 @@
                   <th>Дистанция</th>
                   <th>BMI</th>
                   <th>Категория</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" data-page="admin" aria-labelledby="admin-title">
+        <header class="page-header">
+          <button class="icon-button" type="button" data-go="home" aria-label="Назад на главную">‹</button>
+          <div>
+            <p class="eyebrow">Панель управления</p>
+            <h2 id="admin-title">Админ-панель</h2>
+          </div>
+        </header>
+
+        <div class="panel admin-panel">
+          <div class="admin-toolbar">
+            <div>
+              <strong id="admin-count">0 записей</strong>
+              <p>Участники из сайта, Android и Telegram-бота.</p>
+            </div>
+            <div class="admin-actions">
+              <select id="admin-source-filter" aria-label="Фильтр источника">
+                <option value="all">Все источники</option>
+                <option value="site">Сайт</option>
+                <option value="android">Android</option>
+                <option value="telegram">Telegram</option>
+              </select>
+              <button class="button button-secondary button-small" type="button" id="admin-refresh">Обновить</button>
+              <a class="button button-telegram button-small" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram</a>
+            </div>
+          </div>
+          <div class="empty-state" id="admin-empty">Пока нет записей.</div>
+          <div class="table-wrap">
+            <table id="admin-table">
+              <thead>
+                <tr>
+                  <th>Участник</th>
+                  <th>Источник</th>
+                  <th>Дистанция</th>
+                  <th>BMI</th>
+                  <th>Дата</th>
+                  <th>Действие</th>
                 </tr>
               </thead>
               <tbody></tbody>

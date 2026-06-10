@@ -12,6 +12,11 @@ const navItems = document.querySelectorAll(".side-nav__item");
 const authStatus = document.querySelector("#auth-status");
 const googleLoginButton = document.querySelector("#google-login");
 const logoutButton = document.querySelector("#logout");
+const adminTableBody = document.querySelector("#admin-table tbody");
+const adminEmpty = document.querySelector("#admin-empty");
+const adminCount = document.querySelector("#admin-count");
+const adminRefresh = document.querySelector("#admin-refresh");
+const adminSourceFilter = document.querySelector("#admin-source-filter");
 
 const rawConfig = window.MARATHON_SUPABASE || {};
 const config = {
@@ -31,6 +36,7 @@ const supabaseClient =
 
 let draftRunner = null;
 let currentUser = null;
+let adminRunners = [];
 
 function normalizeConfigValue(value) {
   return String(value || "").trim().replace(/^[A-Z0-9_]+\s*=\s*/, "");
@@ -43,6 +49,10 @@ function showPage(name) {
 
   if (name === "participants") {
     renderParticipants();
+  }
+
+  if (name === "admin") {
+    renderAdmin();
   }
 }
 
@@ -162,6 +172,21 @@ async function loadRunners() {
   return data || [];
 }
 
+async function deleteRunner(id) {
+  if (!supabaseClient || !currentUser) {
+    showNotice("Для удаления записей войдите через Google.");
+    return false;
+  }
+
+  const { error } = await supabaseClient.from("runners").delete().eq("id", id);
+  if (error) {
+    showNotice(`Не удалось удалить запись: ${error.message}`);
+    return false;
+  }
+
+  return true;
+}
+
 async function saveRunner(runner) {
   if (!supabaseClient || !currentUser) {
     showNotice("Чтобы сохранить участника, войдите через Google.");
@@ -228,6 +253,53 @@ async function renderParticipants() {
   }
 }
 
+async function renderAdmin() {
+  if (!adminTableBody) return;
+
+  adminTableBody.innerHTML = "";
+  adminEmpty.textContent = "Загружаю записи...";
+  adminEmpty.classList.add("is-visible");
+  adminRunners = await loadRunners();
+  drawAdminRows();
+}
+
+function drawAdminRows() {
+  const source = adminSourceFilter.value;
+  const rows = source === "all"
+    ? adminRunners
+    : adminRunners.filter((runner) => (runner.source || "site") === source);
+
+  adminTableBody.innerHTML = "";
+  adminEmpty.classList.toggle("is-visible", rows.length === 0);
+  adminEmpty.textContent = "Записей нет.";
+  adminCount.textContent = `${rows.length} ${decline(rows.length, "запись", "записи", "записей")}`;
+
+  for (const runner of rows) {
+    const sourceName = runner.source || "site";
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td><strong>${escapeHtml(runner.first_name)} ${escapeHtml(runner.last_name)}</strong><br><span>${escapeHtml(runner.email)}, ${escapeHtml(runner.country)}</span></td>
+      <td><span class="source-badge ${escapeHtml(sourceName)}">${escapeHtml(sourceName)}</span></td>
+      <td>${escapeHtml(runner.distance)}</td>
+      <td>${escapeHtml(runner.bmi)}<br><span>${escapeHtml(runner.bmi_category)}</span></td>
+      <td>${formatDate(runner.created_at)}</td>
+      <td><button class="danger-button" type="button" data-delete-runner="${escapeHtml(runner.id)}">Удалить</button></td>
+    `;
+    adminTableBody.append(row);
+  }
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 function showNotice(message) {
   let notice = document.querySelector("#app-notice");
   const activePage = document.querySelector(".page.is-active");
@@ -261,11 +333,30 @@ function escapeHtml(value) {
 }
 
 document.addEventListener("click", (event) => {
+  const deleteButton = event.target.closest("[data-delete-runner]");
+  if (deleteButton) {
+    const id = deleteButton.dataset.deleteRunner;
+    if (confirm("Удалить эту запись?")) {
+      deleteRunner(id).then((deleted) => {
+        if (deleted) renderAdmin();
+      });
+    }
+    return;
+  }
+
   const button = event.target.closest("[data-go]");
   if (button) {
     showPage(button.dataset.go);
   }
 });
+
+if (adminRefresh) {
+  adminRefresh.addEventListener("click", renderAdmin);
+}
+
+if (adminSourceFilter) {
+  adminSourceFilter.addEventListener("change", drawAdminRows);
+}
 
 googleLoginButton.addEventListener("click", signInWithGoogle);
 logoutButton.addEventListener("click", signOut);
@@ -326,6 +417,9 @@ async function boot() {
     currentUser = sessionState?.user || null;
     updateAuthUi();
     renderParticipants();
+    if (document.querySelector('[data-page="admin"]').classList.contains("is-active")) {
+      renderAdmin();
+    }
   });
 
   renderParticipants();

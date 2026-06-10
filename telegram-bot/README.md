@@ -2,12 +2,14 @@
 
 Bot features:
 
-- Step-by-step marathon registration
+- Button-based main menu
+- Step-by-step marathon registration with Back and Cancel controls
 - BMI calculator
 - Supabase database insert
 - Participant count from Supabase
 - Countdown to June 15
 - Training tips
+- Site button with the Vercel URL
 
 ## Setup
 

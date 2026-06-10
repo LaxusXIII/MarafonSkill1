@@ -2,3 +2,7 @@ telegram-bot/.env
 server.log
 *.pyc
 __pycache__/
+.gradle/
+build/
+android-marathon-skills/.gradle/
+android-marathon-skills/**/build/

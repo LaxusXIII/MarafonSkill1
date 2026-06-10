@@ -3,7 +3,7 @@ const path = require("path");
 
 const root = __dirname;
 const out = path.join(root, "public");
-const files = ["index.html", "styles.css", "app.js", "supabase-config.js"];
+const files = ["index.html", "styles.css", "app.js", "supabase-config.js", "deploy-check.html"];
 
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
