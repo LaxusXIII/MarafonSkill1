@@ -1,4 +1,4 @@
-# Telegram bot for Marathon Skills
+﻿# Telegram bot for Marathon Skills
 
 Bot features:
 
@@ -21,3 +21,4 @@ Bot features:
 4. Run `start-bot.bat`.
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` private. Do not commit `.env` to GitHub.
+
