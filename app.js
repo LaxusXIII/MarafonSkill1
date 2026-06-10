@@ -12,6 +12,7 @@ const navItems = document.querySelectorAll(".side-nav__item");
 const authStatus = document.querySelector("#auth-status");
 const googleLoginButton = document.querySelector("#google-login");
 const logoutButton = document.querySelector("#logout");
+const adminNav = document.querySelector("#admin-nav");
 const adminTableBody = document.querySelector("#admin-table tbody");
 const adminEmpty = document.querySelector("#admin-empty");
 const adminCount = document.querySelector("#admin-count");
@@ -36,6 +37,7 @@ const supabaseClient =
 
 let draftRunner = null;
 let currentUser = null;
+let isAdmin = false;
 let adminRunners = [];
 
 function normalizeConfigValue(value) {
@@ -43,7 +45,12 @@ function normalizeConfigValue(value) {
 }
 
 function showPage(name) {
-  pages.forEach((page) => page.classList.toggle("is-active", page.dataset.page === name));
+  if (name === "admin" && !isAdmin) {
+    showNotice("?????-?????? ???????? ?????? ?????????????? ????? ????? ????? Google.");
+    name = "home";
+  }
+
+pages.forEach((page) => page.classList.toggle("is-active", page.dataset.page === name));
   navItems.forEach((item) => item.classList.toggle("is-active", item.dataset.go === name));
   window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -141,6 +148,7 @@ function updateAuthUi() {
     googleLoginButton.disabled = false;
     googleLoginButton.hidden = false;
     logoutButton.hidden = true;
+    setAdminVisible(false);
     return;
   }
 
@@ -153,7 +161,41 @@ function updateAuthUi() {
     googleLoginButton.hidden = false;
     googleLoginButton.disabled = false;
     logoutButton.hidden = true;
+    setAdminVisible(false);
   }
+}
+
+
+function setAdminVisible(visible) {
+  isAdmin = Boolean(visible);
+  if (adminNav) {
+    adminNav.hidden = !isAdmin;
+  }
+
+  const adminPage = document.querySelector('[data-page="admin"]');
+  if (!isAdmin && adminPage?.classList.contains("is-active")) {
+    showPage("home");
+  }
+}
+
+async function refreshAdminAccess() {
+  if (!supabaseClient || !currentUser?.email) {
+    setAdminVisible(false);
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("admin_users")
+    .select("email")
+    .eq("email", currentUser.email)
+    .maybeSingle();
+
+  if (error) {
+    setAdminVisible(false);
+    return;
+  }
+
+  setAdminVisible(Boolean(data));
 }
 
 async function loadRunners() {
@@ -256,7 +298,13 @@ async function renderParticipants() {
 async function renderAdmin() {
   if (!adminTableBody) return;
 
-  adminTableBody.innerHTML = "";
+  if (!isAdmin) {
+    showNotice("?????-?????? ???????? ?????? ?????????????? ????? ????? ????? Google.");
+    showPage("home");
+    return;
+  }
+
+adminTableBody.innerHTML = "";
   adminEmpty.textContent = "Загружаю записи...";
   adminEmpty.classList.add("is-visible");
   adminRunners = await loadRunners();
@@ -412,10 +460,12 @@ async function boot() {
   const session = await getSession();
   currentUser = session?.user || null;
   updateAuthUi();
+  await refreshAdminAccess();
 
-  supabaseClient.auth.onAuthStateChange((_event, sessionState) => {
+  supabaseClient.auth.onAuthStateChange(async (_event, sessionState) => {
     currentUser = sessionState?.user || null;
     updateAuthUi();
+    await refreshAdminAccess();
     renderParticipants();
     if (document.querySelector('[data-page="admin"]').classList.contains("is-active")) {
       renderAdmin();
