@@ -39,6 +39,7 @@ let draftRunner = null;
 let currentUser = null;
 let isAdmin = false;
 let adminRunners = [];
+if (adminNav) adminNav.hidden = true;
 
 function normalizeConfigValue(value) {
   return String(value || "").trim().replace(/^[A-Z0-9_]+\s*=\s*/, "");
@@ -46,11 +47,12 @@ function normalizeConfigValue(value) {
 
 function showPage(name) {
   if (name === "admin" && !isAdmin) {
-    showNotice("?????-?????? ???????? ?????? ?????????????? ????? ????? ????? Google.");
+    setAdminVisible(false);
+    showNotice("Admin panel is available only for an admin Google account.");
     name = "home";
   }
 
-pages.forEach((page) => page.classList.toggle("is-active", page.dataset.page === name));
+  pages.forEach((page) => page.classList.toggle("is-active", page.dataset.page === name));
   navItems.forEach((item) => item.classList.toggle("is-active", item.dataset.go === name));
   window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -299,7 +301,8 @@ async function renderAdmin() {
   if (!adminTableBody) return;
 
   if (!isAdmin) {
-    showNotice("?????-?????? ???????? ?????? ?????????????? ????? ????? ????? Google.");
+    setAdminVisible(false);
+    showNotice("Admin panel is available only for an admin Google account.");
     showPage("home");
     return;
   }

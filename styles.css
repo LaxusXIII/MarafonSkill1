@@ -30,6 +30,10 @@ select {
   font: inherit;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
