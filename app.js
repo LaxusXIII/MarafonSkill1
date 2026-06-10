@@ -1,4 +1,4 @@
-const TELEGRAM_URL = "https://t.me/MarafonSkills_bot";
+﻿const TELEGRAM_URL = "https://t.me/MarafonSkills_bot";
 
 const pages = document.querySelectorAll(".page");
 const navItems = document.querySelectorAll(".nav__item");
@@ -76,26 +76,12 @@ function setAdminVisible(visible) {
 }
 
 async function refreshAdminAccess() {
-    if (!supabaseClient || !currentUser?.email) {
-        setAdminVisible(false);
-        return;
-    }
-
-    setAdminVisible(true);
-}
-
-  const { data, error } = await supabaseClient
-    .from("admin_users")
-    .select("email")
-    .eq("email", currentUser.email)
-    .maybeSingle();
-
-  if (error) {
+  if (!supabaseClient || !currentUser?.email) {
     setAdminVisible(false);
     return;
   }
 
-  setAdminVisible(Boolean(data));
+  setAdminVisible(true);
 }
 
 function updateAuthUi() {
@@ -423,3 +409,4 @@ async function boot() {
 }
 
 boot();
+
