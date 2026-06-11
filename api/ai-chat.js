@@ -30,6 +30,19 @@ function readErrorMessage(error) {
   return JSON.stringify(error);
 }
 
+function isQuotaError(message) {
+  return /quota|rate limit|resource_exhausted|free_tier/i.test(message);
+}
+
+function demoAnswer() {
+  return [
+    "ИИ-чат подключен, но сейчас работает в демо-режиме: у Gemini API закончилась бесплатная квота.",
+    "",
+    "Пока могу подсказать базово: для регистрации перейдите в раздел «Регистрация», заполните данные участника, затем рассчитайте BMI и сохраните запись.",
+    "Чтобы включить полноценные ответы, нужно добавить billing или доступную квоту в Google AI Studio.",
+  ].join("\n");
+}
+
 function buildSystemInstruction() {
   return [
     "Ты онлайн-консультант Marathon Skills.",
@@ -84,7 +97,11 @@ module.exports = async function handler(req, res) {
 
     const payload = await response.json().catch(async () => ({ error: await response.text() }));
     if (!response.ok) {
-      return json(res, response.status, { error: readErrorMessage(payload.error || payload) });
+      const message = readErrorMessage(payload.error || payload);
+      if (isQuotaError(message)) {
+        return json(res, 200, { answer: demoAnswer(), demo: true });
+      }
+      return json(res, response.status, { error: message });
     }
 
     const answer = readGeminiText(payload) || "Не получилось сформировать ответ. Попробуйте спросить иначе.";
