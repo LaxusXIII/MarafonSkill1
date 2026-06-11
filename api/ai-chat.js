@@ -10,21 +10,26 @@ function normalizeHistory(history) {
     .filter((item) => item && ["user", "assistant"].includes(item.role) && item.content)
     .slice(-8)
     .map((item) => ({
-      role: item.role,
-      content: String(item.content).slice(0, 1200),
+      role: item.role === "assistant" ? "model" : "user",
+      parts: [{ text: String(item.content).slice(0, 1200) }],
     }));
 }
 
-function readOutputText(payload) {
-  if (payload.output_text) return payload.output_text;
-  const parts = [];
-  for (const item of payload.output || []) {
-    for (const content of item.content || []) {
-      if (content.type === "output_text" && content.text) parts.push(content.text);
-      if (content.type === "text" && content.text) parts.push(content.text);
-    }
-  }
-  return parts.join("\n").trim();
+function readGeminiText(payload) {
+  return (payload.candidates || [])
+    .flatMap((candidate) => candidate.content?.parts || [])
+    .map((part) => part.text || "")
+    .join("\n")
+    .trim();
+}
+
+function buildSystemInstruction() {
+  return [
+    "Ты онлайн-консультант Marathon Skills.",
+    "Отвечай по-русски, коротко и практично.",
+    "Помогай с регистрацией, BMI, дистанциями 42.2 км, 21.1 км и 10 км, подготовкой к марафону и работой сайта.",
+    "Не выдумывай персональные медицинские рекомендации; при рисках советуй обратиться к врачу.",
+  ].join(" ");
 }
 
 module.exports = async function handler(req, res) {
@@ -32,9 +37,9 @@ module.exports = async function handler(req, res) {
     return json(res, 405, { error: "Method not allowed" });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return json(res, 500, { error: "OPENAI_API_KEY is required" });
+    return json(res, 500, { error: "GEMINI_API_KEY is required" });
   }
 
   const question = String(req.body?.message || "").trim();
@@ -42,31 +47,40 @@ module.exports = async function handler(req, res) {
     return json(res, 400, { error: "Message is required" });
   }
 
-  const messages = normalizeHistory(req.body?.history);
-  messages.push({ role: "user", content: question.slice(0, 1600) });
+  const contents = normalizeHistory(req.body?.history);
+  contents.push({
+    role: "user",
+    parts: [{ text: question.slice(0, 1600) }],
+  });
+
+  const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch(url, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-5.2",
-        instructions:
-          "Ты онлайн-консультант Marathon Skills. Отвечай по-русски, коротко и практично. Помогай с регистрацией, BMI, дистанциями 42.2 км, 21.1 км и 10 км, подготовкой к марафону и работой сайта. Не выдумывай персональные медицинские рекомендации; при рисках советуй обратиться к врачу.",
-        input: messages,
-        max_output_tokens: 500,
+        systemInstruction: {
+          parts: [{ text: buildSystemInstruction() }],
+        },
+        contents,
+        generationConfig: {
+          maxOutputTokens: 500,
+          temperature: 0.4,
+        },
       }),
     });
 
+    const payload = await response.json().catch(async () => ({ error: await response.text() }));
     if (!response.ok) {
-      return json(res, response.status, { error: await response.text() });
+      return json(res, response.status, { error: payload.error || payload });
     }
 
-    const payload = await response.json();
-    const answer = readOutputText(payload) || "Не получилось сформировать ответ. Попробуйте спросить иначе.";
+    const answer = readGeminiText(payload) || "Не получилось сформировать ответ. Попробуйте спросить иначе.";
     return json(res, 200, { answer });
   } catch (error) {
     return json(res, 500, { error: error.message });

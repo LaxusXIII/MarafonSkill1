@@ -52,7 +52,7 @@ first_name,last_name,age,gender,country,distance,email,bmi,bmi_category,source
 
 В Vercel добавьте:
 
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL` - необязательно, по умолчанию используется `gpt-5.2`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` - необязательно, по умолчанию используется `gemini-1.5-flash`
 
-На сайте появилась страница `ИИ-чат`. Браузер обращается к `/api/ai-chat`, поэтому ключ OpenAI не попадает в клиентский код.
+На сайте появилась страница `ИИ-чат`. Браузер обращается к `/api/ai-chat`, поэтому ключ Gemini не попадает в клиентский код.
