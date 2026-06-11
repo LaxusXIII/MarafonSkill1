@@ -19,6 +19,7 @@
           <button class="nav__item" type="button" data-page-target="register">Регистрация</button>
           <button class="nav__item" type="button" data-page-target="bmi">BMI</button>
           <button class="nav__item" type="button" data-page-target="participants">Участники</button>
+          <button class="nav__item" type="button" data-page-target="ai">ИИ-чат</button>
           <a class="nav__item nav__link" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram</a>
           <button class="nav__item" type="button" data-page-target="admin" id="admin-nav" hidden>Админ</button>
       </nav>
@@ -42,6 +43,7 @@
             <div class="actions">
               <button class="button button-primary" type="button" data-page-target="register">Регистрация</button>
               <button class="button button-secondary" type="button" data-page-target="participants">Список участников</button>
+              <button class="button button-secondary" type="button" data-page-target="ai">Спросить ИИ</button>
               <a class="button button-telegram" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram-бот</a>
             </div>
           </div>
@@ -124,6 +126,25 @@
         </div>
       </section>
 
+      <section class="page" data-page="ai">
+        <header class="page-header">
+          <button class="back-button" type="button" data-page-target="home">‹</button>
+          <div>
+            <p class="eyebrow">Онлайн-консультант</p>
+            <h2>ИИ-чат</h2>
+          </div>
+        </header>
+        <div class="panel chat-panel">
+          <div class="chat-log" id="ai-chat-log" aria-live="polite">
+            <div class="chat-message chat-message--assistant">Привет! Могу помочь с регистрацией, BMI, выбором дистанции и подготовкой к марафону.</div>
+          </div>
+          <form class="chat-form" id="ai-chat-form">
+            <input id="ai-chat-input" name="message" placeholder="Напишите вопрос о марафоне" autocomplete="off" required>
+            <button class="button button-primary" type="submit">Отправить</button>
+          </form>
+        </div>
+      </section>
+
       <section class="page" data-page="admin">
         <header class="page-header">
           <button class="back-button" type="button" data-page-target="home">‹</button>
@@ -145,6 +166,11 @@
                 <option value="android">Android</option>
                 <option value="telegram">Telegram</option>
               </select>
+              <button class="button button-secondary button-small" type="button" id="admin-export-csv">CSV</button>
+              <label class="button button-secondary button-small import-button">
+                Импорт CSV
+                <input id="admin-import-csv" type="file" accept=".csv,text/csv" hidden>
+              </label>
               <button class="button button-secondary button-small" type="button" id="admin-refresh">Обновить</button>
               <a class="button button-telegram button-small" href="https://t.me/MarafonSkills_bot" target="_blank" rel="noreferrer">Telegram</a>
             </div>

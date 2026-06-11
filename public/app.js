@@ -23,6 +23,12 @@ const adminEmpty = document.querySelector("#admin-empty");
 const adminCount = document.querySelector("#admin-count");
 const adminRefresh = document.querySelector("#admin-refresh");
 const adminSourceFilter = document.querySelector("#admin-source-filter");
+const adminExportCsv = document.querySelector("#admin-export-csv");
+const adminImportCsv = document.querySelector("#admin-import-csv");
+
+const aiChatForm = document.querySelector("#ai-chat-form");
+const aiChatInput = document.querySelector("#ai-chat-input");
+const aiChatLog = document.querySelector("#ai-chat-log");
 
 const rawConfig = window.MARATHON_SUPABASE || {};
 const config = {
@@ -44,6 +50,7 @@ let currentUser = null;
 let isAdmin = false;
 let draftRunner = null;
 let adminRows = [];
+let aiHistory = [];
 
 if (adminNav) adminNav.hidden = true;
 
@@ -226,10 +233,7 @@ async function renderAdmin() {
 }
 
 function drawAdminRows() {
-  const source = adminSourceFilter.value;
-  const rows = source === "all"
-    ? adminRows
-    : adminRows.filter((runner) => (runner.source || "site") === source);
+  const rows = getFilteredAdminRows();
 
   adminBody.innerHTML = "";
   adminEmpty.textContent = "Записей нет.";
@@ -248,6 +252,185 @@ function drawAdminRows() {
       <td><button class="danger-button" type="button" data-delete-runner="${escapeHtml(runner.id)}">Удалить</button></td>
     `;
     adminBody.append(row);
+  }
+}
+
+function getFilteredAdminRows() {
+  const source = adminSourceFilter.value;
+  return source === "all"
+    ? adminRows
+    : adminRows.filter((runner) => (runner.source || "site") === source);
+}
+
+function exportAdminCsv() {
+  const rows = getFilteredAdminRows();
+  if (!rows.length) {
+    showNotice("Нет данных для выгрузки.");
+    return;
+  }
+
+  const headers = [
+    "first_name",
+    "last_name",
+    "age",
+    "gender",
+    "country",
+    "distance",
+    "email",
+    "bmi",
+    "bmi_category",
+    "source",
+    "created_at",
+  ];
+  const lines = [
+    headers.join(","),
+    ...rows.map((row) => headers.map((header) => csvCell(row[header])).join(",")),
+  ];
+  const blob = new Blob([`\uFEFF${lines.join("\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `marathon-runners-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function importAdminCsv(file) {
+  if (!supabaseClient || !isAdmin || !currentUser) {
+    showNotice("Admin access required.");
+    return;
+  }
+
+  const text = await file.text();
+  const records = parseCsv(text);
+  if (records.length < 2) {
+    showNotice("CSV пустой или содержит только заголовок.");
+    return;
+  }
+
+  const headers = records[0].map((header) => header.trim().replace(/^\uFEFF/, ""));
+  const required = ["first_name", "last_name", "age", "gender", "country", "distance", "email", "bmi", "bmi_category"];
+  const missing = required.filter((header) => !headers.includes(header));
+  if (missing.length) {
+    showNotice(`В CSV не хватает колонок: ${missing.join(", ")}`);
+    return;
+  }
+
+  const runners = records.slice(1).filter((row) => row.some(Boolean)).map((row) => {
+    const item = Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]));
+    return {
+      user_id: currentUser.id,
+      first_name: item.first_name.trim(),
+      last_name: item.last_name.trim(),
+      age: Number(item.age),
+      gender: item.gender.trim(),
+      country: item.country.trim(),
+      distance: item.distance.trim(),
+      email: item.email.trim(),
+      bmi: Number(String(item.bmi).replace(",", ".")),
+      bmi_category: item.bmi_category.trim(),
+      source: "site",
+    };
+  });
+
+  const invalid = runners.find((runner) =>
+    !runner.first_name ||
+    !runner.last_name ||
+    !Number.isFinite(runner.age) ||
+    !runner.gender ||
+    !runner.country ||
+    !runner.distance ||
+    !runner.email ||
+    !Number.isFinite(runner.bmi) ||
+    !runner.bmi_category
+  );
+
+  if (invalid) {
+    showNotice("В CSV есть неполные или некорректные строки.");
+    return;
+  }
+
+  const { error } = await supabaseClient.from("runners").insert(runners);
+  if (error) {
+    showNotice(`Import failed: ${error.message}`);
+    return;
+  }
+
+  showNotice(`Импортировано: ${runners.length}`);
+  await renderAdmin();
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function appendChatMessage(role, text) {
+  const message = document.createElement("div");
+  message.className = `chat-message chat-message--${role}`;
+  message.textContent = text;
+  aiChatLog.append(message);
+  aiChatLog.scrollTop = aiChatLog.scrollHeight;
+}
+
+async function sendAiMessage(message) {
+  appendChatMessage("user", message);
+  aiChatInput.value = "";
+  aiChatInput.disabled = true;
+  const submitButton = aiChatForm.querySelector("button");
+  submitButton.disabled = true;
+
+  try {
+    const response = await fetch("/api/ai-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history: aiHistory }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "AI request failed");
+    appendChatMessage("assistant", payload.answer);
+    aiHistory = [...aiHistory, { role: "user", content: message }, { role: "assistant", content: payload.answer }].slice(-8);
+  } catch (error) {
+    appendChatMessage("assistant", `Не удалось получить ответ: ${error.message}`);
+  } finally {
+    aiChatInput.disabled = false;
+    submitButton.disabled = false;
+    aiChatInput.focus();
   }
 }
 
@@ -347,7 +530,18 @@ logoutButton.addEventListener("click", signOut);
 refreshParticipants.addEventListener("click", renderParticipants);
 adminRefresh.addEventListener("click", renderAdmin);
 adminSourceFilter.addEventListener("change", drawAdminRows);
+adminExportCsv.addEventListener("click", exportAdminCsv);
+adminImportCsv.addEventListener("change", (event) => {
+  const [file] = event.target.files || [];
+  if (file) importAdminCsv(file);
+  event.target.value = "";
+});
 bmiForm.addEventListener("input", calculateBmi);
+aiChatForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const message = aiChatInput.value.trim();
+  if (message) sendAiMessage(message);
+});
 
 runnerForm.addEventListener("submit", (event) => {
   event.preventDefault();
