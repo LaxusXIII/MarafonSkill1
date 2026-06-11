@@ -53,6 +53,6 @@ first_name,last_name,age,gender,country,distance,email,bmi,bmi_category,source
 В Vercel добавьте:
 
 - `GEMINI_API_KEY`
-- `GEMINI_MODEL` - необязательно, по умолчанию используется `gemini-1.5-flash`
+- `GEMINI_MODEL` - необязательно, по умолчанию используется `gemini-2.0-flash`
 
 На сайте появилась страница `ИИ-чат`. Браузер обращается к `/api/ai-chat`, поэтому ключ Gemini не попадает в клиентский код.

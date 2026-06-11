@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
     parts: [{ text: question.slice(0, 1600) }],
   });
 
-  const model = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
   try {
