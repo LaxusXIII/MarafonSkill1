@@ -422,7 +422,7 @@ async function sendAiMessage(message) {
       body: JSON.stringify({ message, history: aiHistory }),
     });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.error || "AI request failed");
+    if (!response.ok) throw new Error(formatAiError(payload.error || payload));
     appendChatMessage("assistant", payload.answer);
     aiHistory = [...aiHistory, { role: "user", content: message }, { role: "assistant", content: payload.answer }].slice(-8);
   } catch (error) {
@@ -432,6 +432,13 @@ async function sendAiMessage(message) {
     submitButton.disabled = false;
     aiChatInput.focus();
   }
+}
+
+function formatAiError(error) {
+  if (!error) return "AI request failed";
+  if (typeof error === "string") return error;
+  if (error.message) return error.message;
+  return JSON.stringify(error);
 }
 
 function calculateBmi() {

@@ -23,6 +23,13 @@ function readGeminiText(payload) {
     .trim();
 }
 
+function readErrorMessage(error) {
+  if (!error) return "Gemini request failed";
+  if (typeof error === "string") return error;
+  if (error.message) return error.message;
+  return JSON.stringify(error);
+}
+
 function buildSystemInstruction() {
   return [
     "Ты онлайн-консультант Marathon Skills.",
@@ -77,7 +84,7 @@ module.exports = async function handler(req, res) {
 
     const payload = await response.json().catch(async () => ({ error: await response.text() }));
     if (!response.ok) {
-      return json(res, response.status, { error: payload.error || payload });
+      return json(res, response.status, { error: readErrorMessage(payload.error || payload) });
     }
 
     const answer = readGeminiText(payload) || "Не получилось сформировать ответ. Попробуйте спросить иначе.";
